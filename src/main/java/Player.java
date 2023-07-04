@@ -105,11 +105,4 @@ public class Player {
         return new JSONObject(res.toString());
     }
 
-    public static List<Map.Entry<String, Integer>> mostPlayedChamps(HashMap<String, Integer> hashMap) {
-
-        List<Map.Entry<String, Integer>> list = new ArrayList<>(hashMap.entrySet());
-        list.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
-
-        return list;
-    }
 }
