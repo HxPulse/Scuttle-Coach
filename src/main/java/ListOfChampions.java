@@ -2,6 +2,8 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 
 public class ListOfChampions {
 
@@ -580,6 +582,72 @@ public class ListOfChampions {
         this.jgChampions.add("Zyra");
         this.midChampions.add("Zyra");
         this.supChampions.add("Zyra");
+    }
+
+    public void laneVSall(String lane) {
+        HashMap<String, ArrayList<String>> hashLanes = new HashMap<>();
+        hashLanes.put("top", this.topChampions);
+        hashLanes.put("jg", this.jgChampions);
+        hashLanes.put("mid", this.midChampions);
+        hashLanes.put("bot", this.botChampions);
+        hashLanes.put("sup", this.supChampions);
+        ArrayList<String> laners = hashLanes.get(lane);
+        ArrayList<String> otherChamps = this.allChampions;
+        otherChamps.removeAll(laners);
+        ArrayList<ArrayList<String>> matchups = new ArrayList<>();
+        ArrayList<ArrayList<String>> notYetRegistered = new ArrayList<>();
+        notYetRegistered.add(new ArrayList<>(Arrays.asList("Gwen", "Milio")));
+        notYetRegistered.add(new ArrayList<>(Arrays.asList("KSante", "Milio")));
+        notYetRegistered.add(new ArrayList<>(Arrays.asList("Sett", "Milio")));
+        notYetRegistered.add(new ArrayList<>(Arrays.asList("Yone", "Milio")));
+        notYetRegistered.add(new ArrayList<>(Arrays.asList("Lillia", "Milio")));
+        notYetRegistered.add(new ArrayList<>(Arrays.asList("Vex", "Milio")));
+        notYetRegistered.add(new ArrayList<>(Arrays.asList("Nilah", "Milio")));
+        for (String s1 : laners) {
+            System.out.println(s1);
+            Champion c1 = new Champion(s1);
+            for (String s2 : otherChamps) {
+                if (notYetRegistered.contains(Arrays.asList(s1, s2)) || s1.equals("Milio")){
+                    continue;
+                }
+                ArrayList<String> thisChamp = new ArrayList<>();
+                Champion c2 = new Champion(s2);
+                ArrayList<Double> res = c1.get1v1Stats(c2, false);
+                thisChamp.add(c1.name);
+                thisChamp.add(c2.name);
+                thisChamp.add(res.get(0).toString());
+                thisChamp.add(res.get(1).toString());
+                matchups.add(thisChamp);
+            }
+        }
+        appendToFile(matchups, "src/main/java/lists/" + lane + "VsAllMatchups.txt");
+    }
+
+    public void laneMatchups(String lane) {
+        HashMap<String, ArrayList<String>> hashLanes = new HashMap<>();
+        hashLanes.put("top", this.topChampions);
+        hashLanes.put("jg", this.jgChampions);
+        hashLanes.put("mid", this.midChampions);
+        hashLanes.put("bot", this.botChampions);
+        hashLanes.put("sup", this.supChampions);
+        ArrayList<String> laners = hashLanes.get(lane);
+        ArrayList<ArrayList<String>> matchups = new ArrayList<>();
+        for (String s1 : laners) {
+            Champion c1 = new Champion(s1);
+            ArrayList<String> thisChamp = new ArrayList<>();
+            for (String s2 : laners) {
+                if (!s2.equals(s1)) {
+                    Champion c2 = new Champion(s2);
+                    ArrayList<Double> res = c1.get1v1Stats(c2, false);
+                    thisChamp.add(c1.name);
+                    thisChamp.add(c2.name);
+                    thisChamp.add(res.get(0).toString());
+                    thisChamp.add(res.get(1).toString());
+                    matchups.add(thisChamp);
+                }
+            }
+        }
+        appendToFile(matchups, "java/lists/" + lane + "Matchups.txt");
     }
 
     public static void appendToFile(ArrayList<ArrayList<String>> matchups, String filePath) {
