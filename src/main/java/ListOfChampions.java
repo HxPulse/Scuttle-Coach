@@ -1,18 +1,17 @@
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Scanner;
 
 public class ListOfChampions {
 
-    ArrayList<String> allChampions = new ArrayList<>();
-    ArrayList<String> topChampions = new ArrayList<>();
-    ArrayList<String> jgChampions = new ArrayList<>();
-    ArrayList<String> midChampions = new ArrayList<>();
-    ArrayList<String> botChampions = new ArrayList<>();
-    ArrayList<String> supChampions = new ArrayList<>();
+    public ArrayList<String> allChampions = new ArrayList<>();
+    public ArrayList<String> topChampions = new ArrayList<>();
+    public ArrayList<String> jgChampions = new ArrayList<>();
+    public ArrayList<String> midChampions = new ArrayList<>();
+    public ArrayList<String> botChampions = new ArrayList<>();
+    public ArrayList<String> supChampions = new ArrayList<>();
 
 
     public ListOfChampions() {
@@ -584,7 +583,7 @@ public class ListOfChampions {
         this.supChampions.add("Zyra");
     }
 
-    public void laneVSall(String lane) {
+    public void laneVSall(String lane, boolean synergy) {
         HashMap<String, ArrayList<String>> hashLanes = new HashMap<>();
         hashLanes.put("top", this.topChampions);
         hashLanes.put("jg", this.jgChampions);
@@ -604,15 +603,18 @@ public class ListOfChampions {
         notYetRegistered.add(new ArrayList<>(Arrays.asList("Vex", "Milio")));
         notYetRegistered.add(new ArrayList<>(Arrays.asList("Nilah", "Milio")));
         for (String s1 : laners) {
+            if (s1.equals("Milio")){
+                continue;
+            }
             System.out.println(s1);
             Champion c1 = new Champion(s1);
             for (String s2 : otherChamps) {
-                if (notYetRegistered.contains(Arrays.asList(s1, s2)) || s1.equals("Milio")){
+                if (notYetRegistered.contains(Arrays.asList(s1, s2))){
                     continue;
                 }
                 ArrayList<String> thisChamp = new ArrayList<>();
                 Champion c2 = new Champion(s2);
-                ArrayList<Double> res = c1.get1v1Stats(c2, false);
+                ArrayList<Double> res = c1.get1v1Stats(c2, synergy);
                 thisChamp.add(c1.name);
                 thisChamp.add(c2.name);
                 thisChamp.add(res.get(0).toString());
@@ -620,10 +622,14 @@ public class ListOfChampions {
                 matchups.add(thisChamp);
             }
         }
-        appendToFile(matchups, "src/main/java/lists/" + lane + "VsAllMatchups.txt");
+        if (synergy) {
+            appendToFile(matchups, "src/main/java/lists/" + lane + "Synergies.txt");
+        } else {
+            appendToFile(matchups, "src/main/java/lists/" + lane + "Matchups.txt");
+        }
     }
 
-    public void laneMatchups(String lane) {
+    public void laneMatchups(String lane, boolean synergy) {
         HashMap<String, ArrayList<String>> hashLanes = new HashMap<>();
         hashLanes.put("top", this.topChampions);
         hashLanes.put("jg", this.jgChampions);
@@ -638,7 +644,7 @@ public class ListOfChampions {
             for (String s2 : laners) {
                 if (!s2.equals(s1)) {
                     Champion c2 = new Champion(s2);
-                    ArrayList<Double> res = c1.get1v1Stats(c2, false);
+                    ArrayList<Double> res = c1.get1v1Stats(c2, synergy);
                     thisChamp.add(c1.name);
                     thisChamp.add(c2.name);
                     thisChamp.add(res.get(0).toString());
@@ -647,7 +653,11 @@ public class ListOfChampions {
                 }
             }
         }
-        appendToFile(matchups, "java/lists/" + lane + "Matchups.txt");
+        if (synergy) {
+            appendToFile(matchups, "src/main/java/lists/" + lane + "Synergies.txt");
+        } else {
+            appendToFile(matchups, "src/main/java/lists/" + lane + "Matchups.txt");
+        }
     }
 
     public static void appendToFile(ArrayList<ArrayList<String>> matchups, String filePath) {
@@ -662,5 +672,28 @@ public class ListOfChampions {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static ArrayList<ArrayList<String>> txtToArray(String filePath) {
+        ArrayList<ArrayList<String>> data = new ArrayList<>();
+
+        try {
+            File file = new File(filePath);
+            Scanner scanner = new Scanner(file);
+
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                String[] values = line.split(" ");
+                ArrayList<String> lineData = new ArrayList<>();
+                for (String value : values) {
+                    lineData.add(value);
+                }
+                data.add(lineData);
+            }
+            scanner.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        return data;
     }
 }
