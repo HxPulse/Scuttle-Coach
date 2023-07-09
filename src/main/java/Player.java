@@ -28,6 +28,7 @@ public class Player {
     }
 
     public List<Map.Entry<String, Integer>> mostPlayedChampions() {
+        // Récupère la liste dans l'ordre décroissant des Mastery Points des champions du joueur
         HashMap<String, Integer> champList = new HashMap<>();
         JSONArray res = apiCallArray("https://euw1.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-summoner/" + this.summonerID + "?api_key=" + this.apiKey);
 
@@ -44,7 +45,6 @@ public class Player {
         list.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
         return list;
     }
-
 
     public int convertRankIntoInt(String division, String tier) {
         // Transforme une division + tier en int pour faciliter les calculs
@@ -69,6 +69,7 @@ public class Player {
     }
 
     public Integer getIndexOf(List<Map.Entry<String, Integer>> list, String s) {
+        // Récup l'index de s dans list
         int index = -1;
         for (int i = 0; i < list.size(); i++) {
             if (list.get(i).getKey().equals(s)) {
@@ -79,7 +80,7 @@ public class Player {
         return index;
     }
     public List<Map.Entry<String, Double>> recommendedPick(String lane, ArrayList<String> unavailable, ArrayList<String> teammates, ArrayList<String> enemies) throws Exception {
-
+        // Fonction principale pour trouver le pick le plus adapté
         Map<String, Double> results = new HashMap<>();
         ListOfChampions l = new ListOfChampions();
         ArrayList<String> possiblePicks = (ArrayList<String>) ListOfChampions.class.getField(lane + "Champions").get(l);
@@ -108,6 +109,7 @@ public class Player {
     }
 
     public Map<String, Double> getScores(String lane, Map<String, Double> res, ArrayList<String> champPool, ArrayList<ArrayList<String>> stats, ArrayList<String> possiblePicks) throws Exception {
+        // Fonction de calcul des rangs des champions, utilisée dans la fonction recommendedPick
         ListOfChampions l = new ListOfChampions();
         Double coefficient = 1.0;
         ArrayList<String> sameLane = (ArrayList<String>) ListOfChampions.class.getField(lane + "Champions").get(l);
@@ -134,6 +136,7 @@ public class Player {
     }
 
     public static ArrayList<String> sortByWR(ArrayList<ArrayList<String>> arrayL) {
+        // Classe les champions par WR pour un matchup/synergie
         ArrayList<ArrayList<String>> sortedList = new ArrayList<>(arrayL);
         Collections.sort(sortedList, new Comparator<ArrayList<String>>() {
             @Override
@@ -153,6 +156,7 @@ public class Player {
     }
 
     public static ArrayList<String> sortByKDA(ArrayList<ArrayList<String>> arrayL) {
+        // Classe les champions par KDA pour un matchup/synergie
         ArrayList<ArrayList<String>> sortedList = new ArrayList<>(arrayL);
         Collections.sort(sortedList, new Comparator<ArrayList<String>>() {
             @Override
@@ -170,7 +174,9 @@ public class Player {
 
         return return2;
     }
+
     public String getID(String saidID) {
+        // Récupérer summonerID ou puuid à partir de l'ign
         JSONObject response = apiCall("https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + this.name + "?api_key=" + this.apiKey);
         return (String) response.get(saidID);
     }
