@@ -13,8 +13,8 @@ public class Champion {
     }
 
     public ArrayList<Double> get1v1Stats(Champion c, boolean synergy) {
-        // Récupère le WinRate, le KDA moyen et le PickRate de l'instance du champion,
-        // Contre le champion indiqué en paramètre si synergy = false, et avec si synergy = true
+        // Returns WinRate, average KDA and PickRate of the champion,
+        // Against the given champion if synergy = false, and with if synergy = true
 
         String type = "counter";
         String vsORand = "vs";
@@ -57,7 +57,7 @@ public class Champion {
     }
 
     public HashMap<String, ArrayList<Double>> getAllStats(boolean synergy) {
-        // Appelle la fonction get1v1Stats pour tous les champions
+        // function get1v1Stats called for all champions
 
         HashMap<String, ArrayList<Double>> stats = new HashMap<>();
         ListOfChampions c = new ListOfChampions();

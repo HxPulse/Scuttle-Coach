@@ -3,16 +3,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
+import java.util.*;
+
 import org.json.JSONObject;
 
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        Player p = new Player("kaioow");
+
 //        List<Map.Entry<String, Integer>> mp =  p.mostPlayedChampions(30);
 //        Champion c1 = new Champion(mp.get(0).getKey());
 //        Champion c2 = new Champion(mp.get(1).getKey());
@@ -21,33 +19,22 @@ public class Main {
 //        System.out.println("SummonerID: " + p.summonerID);
 //        System.out.println(mp);
 //        System.out.println(c1.get1v1Stats(c2, false));
+        Player p1 = new Player("KaIoow", "sup");
+        Player p2 = new Player("HxPulse", "bot");
+        Player p3 = new Player("RBK5howdown", "top");
+        Player p4 = new Player("BabyTimmy", "jg");
+        Player p5 = new Player("Xodogaron", "mid");
 
-        ArrayList<String> unavailable = new ArrayList<>();
-        ArrayList<String> teammates = new ArrayList<>();
-        ArrayList<String> enemies = new ArrayList<>();
-        String lane = "jg"; // Lane of the player : top jg mid bot or sup
+        Player p6 = new Player("KaIoow", "sup");
+        Player p7 = new Player("HxPulse", "bot");
+        Player p8 = new Player("RBK5howdown", "top");
+        Player p9 = new Player("BabyTimmy", "jg");
+        Player p10 = new Player("Xodogaron", "mid");
 
-        unavailable.add("Alistar"); // banned champions, if reroll it'll add the champ to this list
-        // unavailable.add(Insert Unavailable champ 2)
-        // etc..
+        ArrayList<Player> team1 = new ArrayList<>(Arrays.asList(p1, p2, p3, p4, p5));
+        ArrayList<Player> team2 = new ArrayList<>(Arrays.asList(p6, p7, p8, p9, p10));
+        Draft.draftPhase(team1, team2);
 
-        teammates.add("Xayah"); // example
-        teammates.add("Maokai");
-        // teammates.add(Insert Teammate 2)
-        // teammates.add(Insert Teammate 3)
-        // teammates.add(Insert Teammate 4)
-
-        enemies.add("Illaoi"); // example
-        enemies.add("Hecarim");
-        enemies.add("LeeSin");
-        // enemies.add(Insert Enemy 2);
-        // enemies.add(Insert Enemy 3);
-        // enemies.add(Insert Enemy 4);
-        // enemies.add(Insert Enemy 5);
-        List<Map.Entry<String, Double>> res = p.recommendedPick(lane, unavailable, teammates, enemies);
-
-        System.out.println("We recommend you to pick : " + res.get(0).getKey() + ", it receives a score of : " + res.get(0).getValue().toString());
-        System.out.println(res);
         System.out.println("I'm done ---------------------------");
     }
 }

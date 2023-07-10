@@ -584,7 +584,7 @@ public class ListOfChampions {
     }
 
     public void laneVSall(String lane, boolean synergy) {
-        // Met à jour les datas de la DB de txt pour une lane donnée contre/avec toutes les autres lanes, en synergy ou matchup
+        // Updates the txt DB data for a given lane against/with all the other lanes, synergy or matchup
         HashMap<String, ArrayList<String>> hashLanes = new HashMap<>();
         hashLanes.put("top", this.topChampions);
         hashLanes.put("jg", this.jgChampions);
@@ -631,7 +631,7 @@ public class ListOfChampions {
     }
 
     public void laneMatchups(String lane, boolean synergy) {
-        // Met à jour les datas de la DB de txt pour une lane donnée contre elle-même, en synergy ou matchup
+        // Updates the txt DB data for a given lane against itself, synergy or matchup
         HashMap<String, ArrayList<String>> hashLanes = new HashMap<>();
         hashLanes.put("top", this.topChampions);
         hashLanes.put("jg", this.jgChampions);
@@ -663,7 +663,7 @@ public class ListOfChampions {
     }
 
     public static void appendToFile(ArrayList<ArrayList<String>> matchups, String filePath) {
-        // Prends les données de la variable matchups pour les écrire dans le fichier txt indiqué par filePath
+        // Takes the data from the matchups array and writes them in the txt file located with filePath
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
             for (ArrayList<String> matchup : matchups) {
                 for (String data : matchup) {
@@ -678,7 +678,7 @@ public class ListOfChampions {
     }
 
     public static ArrayList<ArrayList<String>> txtToArray(String filePath) {
-        // Prend le fichier txt indiqué par filePath pour renvoyer le tableau de données de ce fichier
+        // Takes the txt file located with filePath and returns an array containing all the data of this file
         ArrayList<ArrayList<String>> data = new ArrayList<>();
 
         try {

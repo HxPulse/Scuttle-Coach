@@ -14,21 +14,27 @@ public class Player {
     String name;
     String puuid;
     String summonerID;
+    String lane;
     int rank;
 
     public Player(String name) {
-        this(name, null, null);
+        this(name, null, null, null);
     }
 
-    public Player(String name, String division, String tier) {
+    public Player(String name, String lane) {
+        this(name, lane, null, null);
+    }
+
+    public Player(String name, String lane, String division, String tier) {
         this.name = name;
+        this.lane = lane;
         this.rank = convertRankIntoInt(division, tier);
         this.puuid = getID("puuid");
         this.summonerID = getID("id");
     }
 
     public List<Map.Entry<String, Integer>> mostPlayedChampions() {
-        // Récupère la liste dans l'ordre décroissant des Mastery Points des champions du joueur
+        // Returns in descending order the Mastery Points for each champion played by the player
         HashMap<String, Integer> champList = new HashMap<>();
         JSONArray res = apiCallArray("https://euw1.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-summoner/" + this.summonerID + "?api_key=" + this.apiKey);
 
@@ -47,8 +53,8 @@ public class Player {
     }
 
     public int convertRankIntoInt(String division, String tier) {
-        // Transforme une division + tier en int pour faciliter les calculs
-        // -1 = UNRANKED, 0 = IRON IV, +1 par division, jusqu'à 30 = CHALLENGER
+        // Transforms a division + tier into an int to make computing easier
+        // -1 = UNRANKED, 0 = IRON IV, +1 per division, max is 30 = CHALLENGER
         ArrayList<String> lowDivisions = new ArrayList<>(Arrays.asList("IRON", "BRONZE", "SILVER", "GOLD", "PLATINUM", "EMERALD", "DIAMOND"));
         ArrayList<String> highDivisions = new ArrayList<>(Arrays.asList("MASTER", "GRANDMASTER", "CHALLENGER"));
 
@@ -69,7 +75,7 @@ public class Player {
     }
 
     public Integer getIndexOf(List<Map.Entry<String, Integer>> list, String s) {
-        // Récup l'index de s dans list
+        // Retrieves index of s in list
         int index = -1;
         for (int i = 0; i < list.size(); i++) {
             if (list.get(i).getKey().equals(s)) {
@@ -79,11 +85,12 @@ public class Player {
         }
         return index;
     }
-    public List<Map.Entry<String, Double>> recommendedPick(String lane, ArrayList<String> unavailable, ArrayList<String> teammates, ArrayList<String> enemies) throws Exception {
-        // Fonction principale pour trouver le pick le plus adapté
+
+    public List<Map.Entry<String, Double>> recommendedPick(ArrayList<String> unavailable, ArrayList<String> teammates, ArrayList<String> enemies) throws Exception {
+        // Main function to find the most optimized pick
         Map<String, Double> results = new HashMap<>();
         ListOfChampions l = new ListOfChampions();
-        ArrayList<String> possiblePicks = (ArrayList<String>) ListOfChampions.class.getField(lane + "Champions").get(l);
+        ArrayList<String> possiblePicks = (ArrayList<String>) ListOfChampions.class.getField(this.lane + "Champions").get(l);
         possiblePicks.removeAll(teammates);
         possiblePicks.removeAll(enemies);
         possiblePicks.removeAll(unavailable);
@@ -100,22 +107,22 @@ public class Player {
             int index = getIndexOf(mostPlayedChamps, c);
             results.put(c, mostPlayedChamps.size() - index + 0.0);
         }
-        results = getScores(lane, results, enemies, matchups, possiblePicks);
-        results = getScores(lane, results, teammates, synergies, possiblePicks);
+        results = getScores(results, enemies, matchups, possiblePicks);
+        results = getScores(results, teammates, synergies, possiblePicks);
 
         List<Map.Entry<String, Double>> sortedList = new ArrayList<>(results.entrySet());
         sortedList.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
         return sortedList;
     }
 
-    public Map<String, Double> getScores(String lane, Map<String, Double> res, ArrayList<String> champPool, ArrayList<ArrayList<String>> stats, ArrayList<String> possiblePicks) throws Exception {
-        // Fonction de calcul des rangs des champions, utilisée dans la fonction recommendedPick
+    public Map<String, Double> getScores(Map<String, Double> res, ArrayList<String> champPool, ArrayList<ArrayList<String>> stats, ArrayList<String> possiblePicks) throws Exception {
+        // Rank computing function of champions, used in recommendedPick()
         ListOfChampions l = new ListOfChampions();
-        Double coefficient = 1.0;
-        ArrayList<String> sameLane = (ArrayList<String>) ListOfChampions.class.getField(lane + "Champions").get(l);
+        Double coefficient = 0.8;
+        ArrayList<String> sameLane = (ArrayList<String>) ListOfChampions.class.getField(this.lane + "Champions").get(l);
         for (String str : champPool) {
             if (sameLane.contains(str)) {
-                coefficient = 1.2;
+                coefficient = 1.0;
             }
             ArrayList<ArrayList<String>> whatWeCareAbout = new ArrayList<>();
             for (ArrayList<String> s : stats) {
@@ -126,17 +133,17 @@ public class Player {
             ArrayList<String> wr = sortByWR(whatWeCareAbout);
             ArrayList<String> kda = sortByKDA(whatWeCareAbout);
             for (String s : wr) {
-                res.put(s, res.get(s) + (wr.size() - wr.indexOf(s)) * coefficient);
+                res.put(s, res.get(s) + (l.allChampions.size() - wr.indexOf(s)) * coefficient);
             }
             for (String s1 : kda) {
-                res.put(s1, res.get(s1) + (kda.size() - kda.indexOf(s1)) * coefficient);
+                res.put(s1, res.get(s1) + (l.allChampions.size() - kda.indexOf(s1)) * coefficient);
             }
         }
         return res;
     }
 
     public static ArrayList<String> sortByWR(ArrayList<ArrayList<String>> arrayL) {
-        // Classe les champions par WR pour un matchup/synergie
+        // Ranks champions by WR for a given matchup or synergy
         ArrayList<ArrayList<String>> sortedList = new ArrayList<>(arrayL);
         Collections.sort(sortedList, new Comparator<ArrayList<String>>() {
             @Override
@@ -156,7 +163,7 @@ public class Player {
     }
 
     public static ArrayList<String> sortByKDA(ArrayList<ArrayList<String>> arrayL) {
-        // Classe les champions par KDA pour un matchup/synergie
+        // // Ranks champions by KDA for a given matchup or synergy
         ArrayList<ArrayList<String>> sortedList = new ArrayList<>(arrayL);
         Collections.sort(sortedList, new Comparator<ArrayList<String>>() {
             @Override
@@ -176,7 +183,7 @@ public class Player {
     }
 
     public String getID(String saidID) {
-        // Récupérer summonerID ou puuid à partir de l'ign
+        // Retrieves summonerID or puuid using ign
         JSONObject response = apiCall("https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + this.name + "?api_key=" + this.apiKey);
         return (String) response.get(saidID);
     }
