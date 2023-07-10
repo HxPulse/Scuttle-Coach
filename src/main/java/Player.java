@@ -10,7 +10,8 @@ import java.util.stream.Collectors;
 
 public class Player {
 
-    String apiKey = "RGAPI-41a1ec91-1bba-4f73-9608-f5035cf5cd8b";
+//    String apiKey = "RGAPI-a21b3483-072d-441c-a0af-5adc0b0faef3";
+    String apiKey = "RGAPI-ee067c8d-9bc6-4d93-b5b4-dc8686960648";
     String name;
     String puuid;
     String summonerID;
@@ -126,7 +127,7 @@ public class Player {
             }
             ArrayList<ArrayList<String>> whatWeCareAbout = new ArrayList<>();
             for (ArrayList<String> s : stats) {
-                if(possiblePicks.contains(s.get(0)) && s.get(1).equals(str)){
+                if (possiblePicks.contains(s.get(0)) && s.get(1).equals(str)){
                     whatWeCareAbout.add(s);
                 }
             }
@@ -138,6 +139,65 @@ public class Player {
             for (String s1 : kda) {
                 res.put(s1, res.get(s1) + (l.allChampions.size() - kda.indexOf(s1)) * coefficient);
             }
+        }
+        return res;
+    }
+
+    public List<Map.Entry<String, Double>> recommendedBans(ArrayList<String> unavailable) throws Exception {
+        // Main function to find the most optimized pick
+        Map<String, Double> results = new HashMap<>();
+        ListOfChampions l = new ListOfChampions();
+        ArrayList<String> allChamps = l.allChampions;
+        ArrayList<String> possiblePicks = (ArrayList<String>) ListOfChampions.class.getField(this.lane + "Champions").get(l);
+
+        allChamps.removeAll(unavailable);
+        possiblePicks.removeAll(unavailable);
+
+        ArrayList<ArrayList<String>> matchups = l.txtToArray("src/main/java/lists/" + lane + "Matchups.txt");
+        ArrayList<ArrayList<String>> synergies = l.txtToArray("src/main/java/lists/" + lane + "Synergies.txt");
+
+        List<Map.Entry<String, Integer>> mostPlayedChamps = this.mostPlayedChampions();
+        for (String c : possiblePicks) {
+            int index = getIndexOf(mostPlayedChamps, c);
+            results.put(c, mostPlayedChamps.size() - index + 0.0);
+        }
+        results = computeBans(results, matchups, possiblePicks, allChamps);
+        results = computeBans(results, synergies, possiblePicks, allChamps);
+        List<Map.Entry<String, Double>> sortedList = new ArrayList<>(results.entrySet());
+        sortedList.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
+        return sortedList;
+    }
+
+    public Map<String, Double> computeBans(Map<String, Double> res, ArrayList<ArrayList<String>> matchups, ArrayList<String> possiblePicks, ArrayList<String> allChampions) {
+        Double coefficient = 0.8;
+        ListOfChampions l = new ListOfChampions();
+        ArrayList<ArrayList<String>> db = new ArrayList<>();
+        for (String s : possiblePicks) {
+            Double avgWR = 0.0;
+            Double avgKDA = 0.0;
+            int count = 0;
+
+            for (ArrayList<String> matchUp : matchups) {
+                if (matchUp.get(0).equals(s) && allChampions.contains(matchUp.get(1))) {
+                    avgWR += Double.parseDouble(matchUp.get(2));
+                    avgKDA += Double.parseDouble(matchUp.get(3));
+                    count++;
+                }
+            }
+            if (count == 0) {
+                count++;
+            }
+
+            ArrayList<String> champStats = new ArrayList<>(Arrays.asList(s, s, Double.toString(avgWR/count), Double.toString(avgKDA/count)));
+            db.add(champStats);
+        }
+        ArrayList<String> wr = sortByWR(db);
+        ArrayList<String> kda = sortByKDA(db);
+        for (String s : wr) {
+            res.put(s, res.get(s) + (l.allChampions.size() - wr.indexOf(s)) * coefficient);
+        }
+        for (String s1 : kda) {
+            res.put(s1, res.get(s1) + (l.allChampions.size() - kda.indexOf(s1)) * coefficient);
         }
         return res;
     }

@@ -19,6 +19,7 @@ public class Main {
 //        System.out.println("SummonerID: " + p.summonerID);
 //        System.out.println(mp);
 //        System.out.println(c1.get1v1Stats(c2, false));
+        ArrayList<String> unavailable = new ArrayList<>();
         Player p1 = new Player("KaIoow", "sup");
         Player p2 = new Player("HxPulse", "bot");
         Player p3 = new Player("RBK5howdown", "top");
