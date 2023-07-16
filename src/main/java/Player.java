@@ -5,17 +5,24 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class Player {
 
-//    String apiKey = "RGAPI-a21b3483-072d-441c-a0af-5adc0b0faef3";
-    String apiKey = "RGAPI-ee067c8d-9bc6-4d93-b5b4-dc8686960648";
+    String apiKey = "RGAPI-d123f0e3-ec0a-42cf-912b-19aa5a7b9f12";
+//    String apiKey = "RGAPI-ee067c8d-9bc6-4d93-b5b4-dc8686960648";
     String name;
     String puuid;
     String summonerID;
     String lane;
+
+    // Parameters to adjust regarding the draft
+    double otpCoefficient = 1.5;      // The more OTP the player is, the higher this coefficient should be, someone with a large champion pool can reduce it
+    double laneCoefficient = 1;     // During pick phase, how hard the player should focus its own matchup
+    double otherLanesCoefficient = 0.75;     // During pick phase, how hard the player should focus the other lanes matchups
+    double metaBanCoefficient = 0.75;    // During ban phase, how hard the meta should be looked at when deciding the bans
     int rank;
 
     public Player(String name) {
@@ -106,24 +113,24 @@ public class Player {
         ArrayList<ArrayList<String>> synergies = l.txtToArray("src/main/java/lists/" + lane + "Synergies.txt");
         for (String c : possiblePicks) {
             int index = getIndexOf(mostPlayedChamps, c);
-            results.put(c, mostPlayedChamps.size() - index + 0.0);
+            results.put(c, (mostPlayedChamps.size() - index) * this.otpCoefficient);
         }
-        results = getScores(results, enemies, matchups, possiblePicks);
-        results = getScores(results, teammates, synergies, possiblePicks);
+        results = computePickScores(results, enemies, matchups, possiblePicks);
+        results = computePickScores(results, teammates, synergies, possiblePicks);
 
         List<Map.Entry<String, Double>> sortedList = new ArrayList<>(results.entrySet());
         sortedList.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
         return sortedList;
     }
 
-    public Map<String, Double> getScores(Map<String, Double> res, ArrayList<String> champPool, ArrayList<ArrayList<String>> stats, ArrayList<String> possiblePicks) throws Exception {
+    public Map<String, Double> computePickScores(Map<String, Double> res, ArrayList<String> champPool, ArrayList<ArrayList<String>> stats, ArrayList<String> possiblePicks) throws Exception {
         // Rank computing function of champions, used in recommendedPick()
         ListOfChampions l = new ListOfChampions();
-        Double coefficient = 0.8;
+        Double coefficient = this.otherLanesCoefficient;
         ArrayList<String> sameLane = (ArrayList<String>) ListOfChampions.class.getField(this.lane + "Champions").get(l);
         for (String str : champPool) {
             if (sameLane.contains(str)) {
-                coefficient = 1.0;
+                coefficient = this.laneCoefficient;
             }
             ArrayList<ArrayList<String>> whatWeCareAbout = new ArrayList<>();
             for (ArrayList<String> s : stats) {
@@ -131,19 +138,12 @@ public class Player {
                     whatWeCareAbout.add(s);
                 }
             }
-            ArrayList<String> wr = sortByWR(whatWeCareAbout);
-            ArrayList<String> kda = sortByKDA(whatWeCareAbout);
-            for (String s : wr) {
-                res.put(s, res.get(s) + (l.allChampions.size() - wr.indexOf(s)) * coefficient);
-            }
-            for (String s1 : kda) {
-                res.put(s1, res.get(s1) + (l.allChampions.size() - kda.indexOf(s1)) * coefficient);
-            }
+            res = computeRanks(res, whatWeCareAbout, coefficient);
         }
         return res;
     }
 
-    public List<Map.Entry<String, Double>> recommendedBans(ArrayList<String> unavailable) throws Exception {
+    public List<Map.Entry<String, Double>> recommendedBan(ArrayList<String> unavailable) throws Exception {
         // Main function to find the most optimized pick
         Map<String, Double> results = new HashMap<>();
         ListOfChampions l = new ListOfChampions();
@@ -159,18 +159,18 @@ public class Player {
         List<Map.Entry<String, Integer>> mostPlayedChamps = this.mostPlayedChampions();
         for (String c : possiblePicks) {
             int index = getIndexOf(mostPlayedChamps, c);
-            results.put(c, mostPlayedChamps.size() - index + 0.0);
+            results.put(c, (mostPlayedChamps.size() - index) * this.otpCoefficient);
         }
-        results = computeBans(results, matchups, possiblePicks, allChamps);
-        results = computeBans(results, synergies, possiblePicks, allChamps);
+        results = computeBanScores(results, matchups, possiblePicks, allChamps);
+        results = computeBanScores(results, synergies, possiblePicks, allChamps);
         List<Map.Entry<String, Double>> sortedList = new ArrayList<>(results.entrySet());
         sortedList.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
         return sortedList;
     }
 
-    public Map<String, Double> computeBans(Map<String, Double> res, ArrayList<ArrayList<String>> matchups, ArrayList<String> possiblePicks, ArrayList<String> allChampions) {
-        Double coefficient = 0.8;
-        ListOfChampions l = new ListOfChampions();
+    public Map<String, Double> computeBanScores(Map<String, Double> res, ArrayList<ArrayList<String>> matchups, ArrayList<String> possiblePicks, ArrayList<String> allChampions) {
+        Double coefficient = this.metaBanCoefficient;
+
         ArrayList<ArrayList<String>> db = new ArrayList<>();
         for (String s : possiblePicks) {
             Double avgWR = 0.0;
@@ -187,10 +187,14 @@ public class Player {
             if (count == 0) {
                 count++;
             }
-
             ArrayList<String> champStats = new ArrayList<>(Arrays.asList(s, s, Double.toString(avgWR/count), Double.toString(avgKDA/count)));
             db.add(champStats);
         }
+        return computeRanks(res, db, coefficient);
+    }
+
+    public Map<String, Double> computeRanks(Map<String, Double> res, ArrayList<ArrayList<String>> db, double coefficient) {
+        ListOfChampions l = new ListOfChampions();
         ArrayList<String> wr = sortByWR(db);
         ArrayList<String> kda = sortByKDA(db);
         for (String s : wr) {
@@ -213,12 +217,10 @@ public class Player {
                 return Double.compare(thirdElement2, thirdElement1);
             }
         });
-
         ArrayList<String> return1 = new ArrayList<>();
         for (ArrayList<String> list : sortedList) {
             return1.add(list.get(0));
         }
-
         return return1;
     }
 
@@ -240,6 +242,28 @@ public class Player {
         }
 
         return return2;
+    }
+
+    public HashMap<Integer, Double> getChallenges() {
+        ArrayList<Integer> challengeIDs = new ArrayList<>(Arrays.asList(302101, 302102, 203401, 203402, 203403, 203404, 203405, 203407, 203408, 203409, 402201,
+                402203, 402204, 402205, 402208, 401301, 302103, 302104, 302402, 401304, 401305, 402404, 402108, 302303, 301302, 204103, 401302, 204202, 202104,
+                202202, 204203, 204201, 402402, 402403, 402401, 204102, 402501, 204101, 402502, 302304, 302305, 203203, 203202, 203201, 202205, 202201, 202302,
+                202301, 402103, 402106, 402104, 201004, 203105, 210005, 202305, 402107, 202101, 202203, 202204, 402408, 402409, 402407, 103204, 401303, 201002,
+                402105, 201003, 202103, 202102, 202105, 203303, 302202, 302203, 402209, 201001, 402109, 402109, 203302, 301205, 301202, 301201, 301203, 303201,
+                303202, 402102, 303204, 303302, 303303, 203301, 103202, 203102, 203103, 203101, 203305, 302105, 302106, 301103, 301104, 301105, 302201, 301303,
+                301306, 302404, 301101, 402210, 402206, 402207, 402202, 303205, 302301, 210002, 302302, 103203, 103301, 103303, 103201, 301102, 203304, 401106,
+                401306, 402406, 301204, 202303, 301301, 301107, 103206, 301106, 210001, 210003, 103101, 203406, 103205, 301304, 203104, 302401, 103304, 301305));
+        HashMap<Integer, Double> challenges = new HashMap<>();
+        JSONObject apiResponse = apiCall("https://euw1.api.riotgames.com/lol/challenges/v1/player-data/" + this.puuid + "?api_key=" + this.apiKey);
+        JSONArray allChallenges = (JSONArray) apiResponse.get("challenges");
+        for (Object c : allChallenges) {
+            JSONObject chall = (JSONObject) c;
+            if (challengeIDs.contains(chall.get("challengeId"))) {
+                BigDecimal decimalValue = (BigDecimal) chall.get("value");
+                challenges.put((int) chall.get("challengeId"), decimalValue.doubleValue());
+            }
+        }
+        return challenges;
     }
 
     public String getID(String saidID) {

@@ -26,15 +26,16 @@ public class Main {
         Player p4 = new Player("BabyTimmy", "jg");
         Player p5 = new Player("Xodogaron", "mid");
 
-        Player p6 = new Player("KaIoow", "sup");
-        Player p7 = new Player("HxPulse", "bot");
-        Player p8 = new Player("RBK5howdown", "top");
-        Player p9 = new Player("BabyTimmy", "jg");
-        Player p10 = new Player("Xodogaron", "mid");
+//        Player p6 = new Player("KaIoow", "sup");
+//        Player p7 = new Player("HxPulse", "bot");
+//        Player p8 = new Player("RBK5howdown", "top");
+//        Player p9 = new Player("BabyTimmy", "jg");
+//        Player p10 = new Player("Xodogaron", "mid");
 
         ArrayList<Player> team1 = new ArrayList<>(Arrays.asList(p1, p2, p3, p4, p5));
-        ArrayList<Player> team2 = new ArrayList<>(Arrays.asList(p6, p7, p8, p9, p10));
-        Draft.draftPhase(team1, team2);
+       // ArrayList<Player> team2 = new ArrayList<>(Arrays.asList(p6, p7, p8, p9, p10));
+        //Draft.draftPhase(team1, team2);
+        //Draft.teamBans(team1);
 
         System.out.println("I'm done ---------------------------");
     }

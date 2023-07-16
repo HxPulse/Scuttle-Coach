@@ -26,10 +26,13 @@ public class Draft {
         Player red4 = team2.get(3);
         Player red5 = team2.get(4);
 
-        for (int i = 0; i < 3; i++){
-            unavailable = bestBan(team2, unavailable, 1);
-            unavailable = bestBan(team1, unavailable, 2);
-        }
+        unavailable = playerBan(red1, unavailable, 1);
+        unavailable = playerBan(blue1, unavailable, 2);
+        unavailable = playerBan(red2, unavailable, 1);
+        unavailable = playerBan(blue2, unavailable, 2);
+        unavailable = playerBan(red3, unavailable, 1);
+        unavailable = playerBan(blue3, unavailable, 2);
+
         System.out.println("");
         teammates = playerPick(blue1, unavailable, teammates, enemies, 1);
         System.out.println("");
@@ -44,10 +47,11 @@ public class Draft {
 
         unavailable.addAll(teammates);
         unavailable.addAll(enemies);
-        for (int i = 0; i < 2; i++) {
-            unavailable = bestBan(team2, unavailable, 1);
-            unavailable = bestBan(team1, unavailable, 2);
-        }
+        unavailable = playerBan(red4, unavailable, 1);
+        unavailable = playerBan(blue4, unavailable, 2);
+        unavailable = playerBan(red5, unavailable, 1);
+        unavailable = playerBan(blue5, unavailable, 2);
+
         System.out.println("");
         enemies = playerPick(red4, unavailable, enemies, teammates,2);
         System.out.println("");
@@ -67,22 +71,21 @@ public class Draft {
         return teammates;
     }
 
-    public static ArrayList<String> bestBan (ArrayList<Player> team, ArrayList<String> unavailable, int number) throws Exception {
-        List<Map.Entry<String, Double>> teamBans = new ArrayList<>();
+    public static ArrayList<String> playerBan(Player p, ArrayList<String> unavailable, int number) throws Exception {
+        Map.Entry<String, Double> pick = p.recommendedBan(unavailable).get(0);
         ListOfChampions l = new ListOfChampions();
-        for (Player p : team) {
-            Map.Entry<String, Double> playerBan = p.recommendedBans(unavailable).get(0);
-            teamBans.add(playerBan);
-        }
-        Collections.sort(teamBans, new Comparator<Map.Entry<String, Double>>() {
-            @Override
-            public int compare(Map.Entry<String, Double> entry1, Map.Entry<String, Double> entry2) {
-                return Double.compare(entry2.getValue(), entry1.getValue());
-            }
-        });
-        Double rating = teamBans.get(0).getValue() / (l.allChampions.size() * 5);
-        System.out.println("Team " + number + " bans " + teamBans.get(0).getKey() + " with an accuracy of " + rating*100 + "%");
-        unavailable.add(teamBans.get(0).getKey());
+        int bestScorePossible = l.allChampions.size() * 5;
+        Double rating = pick.getValue() / bestScorePossible;
+        System.out.println("Team " + number + " bans " + pick.getKey() + " with an accuracy of " + rating*100 + "%");
+        unavailable.add(pick.getKey());
         return unavailable;
+    }
+
+    public static void teamBans(ArrayList<Player> team) throws Exception {
+        for (Player p : team) {
+            List<Map.Entry<String, Double>> pick = p.recommendedBan(new ArrayList<>());
+            System.out.println("Recommended bans for " + p.name + " : " + pick.get(0).getKey() + " "
+                    + pick.get(1).getKey() + " " + pick.get(2).getKey());
+        }
     }
 }
