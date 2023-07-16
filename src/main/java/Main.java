@@ -36,7 +36,10 @@ public class Main {
        // ArrayList<Player> team2 = new ArrayList<>(Arrays.asList(p6, p7, p8, p9, p10));
         //Draft.draftPhase(team1, team2);
         //Draft.teamBans(team1);
-
+        ArrayList<ArrayList<String>> res = Draft.compareThroughChallenges(p2, p1, 1.5);
+        for (ArrayList<String> l : res) {
+            System.out.println(l.get(1));
+        }
         System.out.println("I'm done ---------------------------");
     }
 }
