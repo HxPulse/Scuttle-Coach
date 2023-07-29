@@ -11,8 +11,8 @@ import java.util.stream.Collectors;
 
 public class Player {
 
-    String apiKey = "RGAPI-d123f0e3-ec0a-42cf-912b-19aa5a7b9f12";
-//    String apiKey = "RGAPI-ee067c8d-9bc6-4d93-b5b4-dc8686960648";
+    String apiKey = "RGAPI-592f97db-08df-44dc-bf99-8791fac5624d";
+//    String apiKey = "RGAPI-e3f1c486-56c7-4207-bc48-859b893e80b7";
     String name;
     String puuid;
     String summonerID;
@@ -20,7 +20,7 @@ public class Player {
 
     // Parameters to adjust regarding the draft
     double otpCoefficient = 1.5;      // The more OTP the player is, the higher this coefficient should be, someone with a large champion pool can reduce it
-    double laneCoefficient = 1;     // During pick phase, how hard the player should focus its own matchup
+    double laneCoefficient = 1;     // During pick phase, how hard the player should focus on its own matchup
     double otherLanesCoefficient = 0.75;     // During pick phase, how hard the player should focus the other lanes matchups
     double metaBanCoefficient = 0.75;    // During ban phase, how hard the meta should be looked at when deciding the bans
     int rank;
@@ -50,13 +50,13 @@ public class Player {
         while (res.length() > i && res.getJSONObject(i) != null) {
             JSONObject champion = res.getJSONObject(i);
             String c = Champion.championFromID((int) champion.get("championId"));
-            int points = (int) champion.get("championPoints");
+            int points = (int) champion.get("championPoints");              // Récup des points pour chaque champ
             champList.put(c, points);
             i++;
         }
 
         List<Map.Entry<String, Integer>> list = new ArrayList<>(champList.entrySet());
-        list.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
+        list.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));   // Comparaison + tri de la liste
         return list;
     }
 
@@ -101,7 +101,7 @@ public class Player {
         ArrayList<String> possiblePicks = (ArrayList<String>) ListOfChampions.class.getField(this.lane + "Champions").get(l);
         possiblePicks.removeAll(teammates);
         possiblePicks.removeAll(enemies);
-        possiblePicks.removeAll(unavailable);
+        possiblePicks.removeAll(unavailable);       // Récup tous les champs qu'on peut pick
         if (possiblePicks.isEmpty()) {
             results.put("No champion left !", 0.0);
             List<Map.Entry<String, Double>> sortedList = new ArrayList<>(results.entrySet());
@@ -113,13 +113,13 @@ public class Player {
         ArrayList<ArrayList<String>> synergies = l.txtToArray("src/main/java/lists/" + lane + "Synergies.txt");
         for (String c : possiblePicks) {
             int index = getIndexOf(mostPlayedChamps, c);
-            results.put(c, (mostPlayedChamps.size() - index) * this.otpCoefficient);
+            results.put(c, (l.allChampions.size() - index) * this.otpCoefficient);      // Premier calcul de score en les classant par Mastery Points
         }
-        results = computePickScores(results, enemies, matchups, possiblePicks);
-        results = computePickScores(results, teammates, synergies, possiblePicks);
+        results = computePickScores(results, enemies, matchups, possiblePicks);         // Deuxième calcul de score en regardant tous les matchups possibles
+        results = computePickScores(results, teammates, synergies, possiblePicks);      // Troisième calcul de score en regardant toutes les synergies possibles
 
         List<Map.Entry<String, Double>> sortedList = new ArrayList<>(results.entrySet());
-        sortedList.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
+        sortedList.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));     // Comparaison + tri de la liste
         return sortedList;
     }
 
@@ -128,28 +128,29 @@ public class Player {
         ListOfChampions l = new ListOfChampions();
         Double coefficient = this.otherLanesCoefficient;
         ArrayList<String> sameLane = (ArrayList<String>) ListOfChampions.class.getField(this.lane + "Champions").get(l);
-        for (String str : champPool) {
+        for (String str : champPool) {      // On regarde chaque champion enemi ou allié 1 par 1
             if (sameLane.contains(str)) {
-                coefficient = this.laneCoefficient;
+                coefficient = this.laneCoefficient;     // Si le perso est sur la même lane, on peut y accorder plus ou moins d'importance
             }
             ArrayList<ArrayList<String>> whatWeCareAbout = new ArrayList<>();
-            for (ArrayList<String> s : stats) {
-                if (possiblePicks.contains(s.get(0)) && s.get(1).equals(str)){
-                    whatWeCareAbout.add(s);
+            for (ArrayList<String> s : stats) {                                   // On regarde la liste des matchups / synergies
+                if (possiblePicks.contains(s.get(0)) && s.get(1).equals(str)){    // Si on a 1 ligne entre le champion enemi ou allié currently checked et un champion dispo
+                    whatWeCareAbout.add(s);                                       // Alors les stats de WR et KDA nous intéressent et on les prend
                 }
             }
-            res = computeRanks(res, whatWeCareAbout, coefficient);
+            res = computeRanks(res, whatWeCareAbout, coefficient);      // Calculs ici
         }
         return res;
     }
 
     public List<Map.Entry<String, Double>> recommendedBan(ArrayList<String> unavailable) throws Exception {
-        // Main function to find the most optimized pick
+        // This function returns the recommendedBans AGAINST the instance of this player
         Map<String, Double> results = new HashMap<>();
         ListOfChampions l = new ListOfChampions();
         ArrayList<String> allChamps = l.allChampions;
         ArrayList<String> possiblePicks = (ArrayList<String>) ListOfChampions.class.getField(this.lane + "Champions").get(l);
 
+        // On réalise quasiment la fonction recommendedPick() : le raisonnement c'est qu'on regarde quel(s) champ(s) conviendrai(en)t le mieux au joueur et on les ban
         allChamps.removeAll(unavailable);
         possiblePicks.removeAll(unavailable);
 
@@ -159,7 +160,7 @@ public class Player {
         List<Map.Entry<String, Integer>> mostPlayedChamps = this.mostPlayedChampions();
         for (String c : possiblePicks) {
             int index = getIndexOf(mostPlayedChamps, c);
-            results.put(c, (mostPlayedChamps.size() - index) * this.otpCoefficient);
+            results.put(c, (l.allChampions.size() - index) * this.otpCoefficient);
         }
         results = computeBanScores(results, matchups, possiblePicks, allChamps);
         results = computeBanScores(results, synergies, possiblePicks, allChamps);
@@ -194,11 +195,11 @@ public class Player {
     }
 
     public Map<String, Double> computeRanks(Map<String, Double> res, ArrayList<ArrayList<String>> db, double coefficient) {
-        ListOfChampions l = new ListOfChampions();
-        ArrayList<String> wr = sortByWR(db);
+        ListOfChampions l = new ListOfChampions();      // On a tous les matchups/synergies qui nous intéressent vraiment
+        ArrayList<String> wr = sortByWR(db);            // On les classe par WR et KDA
         ArrayList<String> kda = sortByKDA(db);
         for (String s : wr) {
-            res.put(s, res.get(s) + (l.allChampions.size() - wr.indexOf(s)) * coefficient);
+            res.put(s, res.get(s) + (l.allChampions.size() - wr.indexOf(s)) * coefficient);     // Et on attribue les scores
         }
         for (String s1 : kda) {
             res.put(s1, res.get(s1) + (l.allChampions.size() - kda.indexOf(s1)) * coefficient);
@@ -245,6 +246,7 @@ public class Player {
     }
 
     public HashMap<Integer, Double> getChallenges() {
+        // Returns the HashMap of all challenges we're interested in and the values of the said player
         ArrayList<Integer> challengeIDs = new ArrayList<>(Arrays.asList(302101, 302102, 203401, 203402, 203403, 203404, 203405, 203407, 203408, 203409, 402201,
                 402203, 402204, 402205, 402208, 401301, 302103, 302104, 302402, 401304, 401305, 402404, 402108, 302303, 301302, 204103, 401302, 204202, 202104,
                 202202, 204203, 204201, 402402, 402403, 402401, 204102, 402501, 204101, 402502, 302304, 302305, 203203, 203202, 203201, 202205, 202201, 202302,

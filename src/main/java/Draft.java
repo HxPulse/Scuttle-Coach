@@ -3,27 +3,21 @@ import java.util.*;
 import java.text.DecimalFormat;
 public class Draft {
 
-    public static void draftPhase(ArrayList<Player> team1, ArrayList<Player> team2) throws Exception {
+    public static void draftPhase(ArrayList<Player> team1, ArrayList<Player> team2, ArrayList<String> unavailable) throws Exception {
 
-        ArrayList<String> unavailable = new ArrayList<>();
         ArrayList<String> teammates = new ArrayList<>();
         ArrayList<String> enemies = new ArrayList<>();
 
-//        ArrayList<String> recommendedBans = recommendedBans(); // banned champions, if reroll it'll add the champ to this list
-//        for (String ban : recommendedBans) {
-//            unavailable.add(ban);
-//        }
-
         Player blue1 = team1.get(0);
-        Player blue2 = team1.get(1);
+        Player blue2 = team1.get(3);
         Player blue3 = team1.get(2);
-        Player blue4 = team1.get(3);
+        Player blue4 = team1.get(1);
         Player blue5 = team1.get(4);
 
         Player red1 = team2.get(0);
-        Player red2 = team2.get(1);
+        Player red2 = team2.get(3);
         Player red3 = team2.get(2);
-        Player red4 = team2.get(3);
+        Player red4 = team2.get(1);
         Player red5 = team2.get(4);
 
         unavailable = playerBan(red1, unavailable, 1);
@@ -35,14 +29,18 @@ public class Draft {
 
         System.out.println("");
         teammates = playerPick(blue1, unavailable, teammates, enemies, 1);
+
         System.out.println("");
-        enemies = playerPick(red1, unavailable, enemies, teammates,2);
-        enemies = playerPick(red2, unavailable, enemies, teammates,2);
+        enemies = playerPick(red1, unavailable, enemies, teammates, 2);
+        enemies = playerPick(red2, unavailable, enemies, teammates, 2);
+
         System.out.println("");
-        teammates = playerPick(blue2, unavailable, teammates, enemies,1);
-        teammates = playerPick(blue3, unavailable, teammates, enemies,1);
+        teammates = playerPick(blue2, unavailable, teammates, enemies, 1);
+        teammates = playerPick(blue3, unavailable, teammates, enemies, 1);
+
         System.out.println("");
         enemies = playerPick(red3, unavailable, enemies, teammates,2);
+
         System.out.println("");
 
         unavailable.addAll(teammates);
@@ -54,23 +52,44 @@ public class Draft {
 
         System.out.println("");
         enemies = playerPick(red4, unavailable, enemies, teammates,2);
+
         System.out.println("");
         teammates = playerPick(blue4, unavailable, teammates, enemies,1);
         teammates = playerPick(blue5, unavailable, teammates, enemies,1);
+
         System.out.println("");
         enemies = playerPick(red5, unavailable, enemies, teammates,2);
     }
 
+
     public static ArrayList<String> playerPick(Player p, ArrayList<String> unavailable, ArrayList<String> teammates, ArrayList<String> enemies, int number) throws Exception {
-        Map.Entry<String, Double> pick = p.recommendedPick(unavailable, teammates, enemies).get(0);
-        ListOfChampions l = new ListOfChampions();
-        int bestScorePossible = l.allChampions.size() * (1 + 2 * (teammates.size() + enemies.size()));
-        Double rating = pick.getValue() / bestScorePossible;
-        System.out.println("Team " + number + " " + p.name + " picks " + pick.getKey() + " with an accuracy of " + rating*100 + "%");
+        Map.Entry<String, Double> pick = p.recommendedPick(unavailable, teammates, enemies).get(0);     // Récup élt #1 dans la liste des picks conseillés
+        Double bestScorePossible = computeBestScore(p, enemies, teammates);                             // Calcul du meilleur score théorique pour avoir le ratio de précision
+        System.out.println("Team " + number + " " + p.name + " picks " + pick.getKey() + " with an accuracy of " + pick.getValue()/bestScorePossible*100 + "%");
         teammates.add(pick.getKey());
         return teammates;
     }
 
+    public static Double computeBestScore(Player p, ArrayList<String> enemies, ArrayList<String> teammates) throws Exception {
+        ListOfChampions l = new ListOfChampions();
+        Double theoricBestScore = l.allChampions.size() * p.otpCoefficient;
+        ArrayList<String> sameLane = (ArrayList<String>) ListOfChampions.class.getField(p.lane + "Champions").get(l);
+        for (String ally : teammates) {
+            if (sameLane.contains(ally)) {
+                theoricBestScore += 2 * l.allChampions.size() * p.laneCoefficient;
+            } else {
+                theoricBestScore += 2 * l.allChampions.size() * p.otherLanesCoefficient;
+            }
+        }
+        for (String enemy : enemies) {
+            if (sameLane.contains(enemy)) {
+                theoricBestScore += 2 * l.allChampions.size() * p.laneCoefficient;
+            } else {
+                theoricBestScore += 2 * l.allChampions.size() * p.otherLanesCoefficient;
+            }
+        }
+        return theoricBestScore;
+    }
     public static ArrayList<String> playerBan(Player p, ArrayList<String> unavailable, int number) throws Exception {
         Map.Entry<String, Double> pick = p.recommendedBan(unavailable).get(0);
         ListOfChampions l = new ListOfChampions();
@@ -90,18 +109,18 @@ public class Draft {
     }
 
     public static ArrayList<ArrayList<String>> compareThroughChallenges(Player p1, Player p2, double statsDiffCoef) {
-        HashMap<Integer, Double> c1 = p1.getChallenges();
+        HashMap<Integer, Double> c1 = p1.getChallenges();   // Récup les challenges
         HashMap<Integer, Double> c2 = p2.getChallenges();
-        double nbGames1 = c1.get(402102);
+        double nbGames1 = c1.get(402102);                   // Récup nbr de games
         double nbGames2 = c2.get(402102);
         HashMap<Integer, Map.Entry<Player, Double>> map = new HashMap<>();
 
         for (int i : c1.keySet()) {
             if (c2.keySet().contains(i)) {
-                ArrayList<Double> statsDiff = getStatsDiff(nbGames1, nbGames2, c1.get(i), c2.get(i));
-                if (statsDiff.get(1) >= statsDiffCoef) {
-                    Double diff = statsDiff.get(1)*100;
-                    if (statsDiff.get(0).equals(c1.get(i))) {
+                ArrayList<Double> statsDiff = getStatsDiff(nbGames1, nbGames2, c1.get(i), c2.get(i));   // Calcul stats diff
+                if (statsDiff.get(1) >= statsDiffCoef) {        // Si on considère la diff importante
+                    Double diff = statsDiff.get(1) * 100;
+                    if (statsDiff.get(0).equals(c1.get(i))) {   // On regarde qui diff l'autre
                         map.put(i, new AbstractMap.SimpleEntry<>(p1, diff));
                     } else {
                         map.put(i, new AbstractMap.SimpleEntry<>(p2, diff));
@@ -116,7 +135,7 @@ public class Draft {
             thisDiff.add(displayChallengeDiff(i, map.get(i)));
             allDiffs.add(thisDiff);
         }
-        sortChallengeList(allDiffs);
+        sortChallengeList(allDiffs);    // Classement
         return allDiffs;
     }
 

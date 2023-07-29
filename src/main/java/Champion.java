@@ -239,5 +239,4 @@ public class Champion {
         return championMap.get(champID);
     }
 
-
 }
